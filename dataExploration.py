@@ -22,13 +22,19 @@ def plot_transformed_distribution(data, cols):
     for col in cols:
         plot = sns.displot(data, x=col, kind="kde", fill=True)
         plot.set_titles("{col} transformed distribution")
-        plot.savefig(f"dist/{col}_transformed_distribution.png")
+        plot.savefig(f"dist_transformed/{col}_transformed_distribution.png")
 
+def plot_scaled_distribution(data, cols):
+    for col in cols:
+        plot = sns.displot(data, x=col, kind="kde", fill=True)
+        plot.set_titles("{col} scaled distribution")
+        plot.savefig(f"dist_scaled/{col}_scaled_distribution.png")
 
 
 
 data = pd.read_csv("data.csv")
 # get only columns containing numeric values
+print(data.loc[data["mRNA"] > 2000][["mRNA", "GeneLen"]])
 nv = data[numeric_cols].to_numpy()
 
 # log2 transformation on the numeric columns
@@ -37,12 +43,31 @@ transformer = preprocessing.FunctionTransformer(log2_transform)
 nv_transformed = transformer.transform(nv)
 
 # scaling of the previously transformed values
-scaler = preprocessing.StandardScaler().fit(nv_transformed)
-nv_preprocessed = scaler.transform(nv_transformed)
+#scaler = preprocessing.RobustScaler().fit(nv_transformed)
+print(data.shape[0])
+nv = data["mRNA"].to_numpy()
+print(nv)
+nv = nv.reshape(len(nv), 1)
+print(nv)
+nv = nv + 1
+pt = preprocessing.PowerTransformer(method="yeo-johnson")
+pt_transformer = pt.fit(nv)
+nv_preprocessed = pt_transformer.transform(nv)
+#nv_preprocessed = preprocessing.power_transform(nv, method='box-cox')
+#nv_preprocessed = boxcox.transform(nv)
+#nv_preprocessed = scaler.transform(nv_transformed)
 
-trans_data = pd.DataFrame(nv_transformed, columns=numeric_cols)
+#trans_data = pd.DataFrame(nv_transformed, columns=numeric_cols)
 
-scaled_data = pd.DataFrame(nv_preprocessed, columns=numeric_cols)
+scaled_data = pd.DataFrame(nv_preprocessed, columns=["mRNA"])
 
-plot_distribution(data, numeric_cols)
-plot_transformed_distribution(data, numeric_cols)
+#plot_distribution(data, numeric_cols)
+#plot_transformed_distribution(trans_data, numeric_cols)
+plot_scaled_distribution(scaled_data, ["mRNA"])
+
+print(pt.inverse_transform(nv_preprocessed))
+
+
+for b, a in zip(nv, nv_preprocessed):
+    if b != a:
+        print(b, " ", a)
