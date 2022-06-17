@@ -1,14 +1,8 @@
 import os
-import sys
 import numpy as np
-from argparse import ArgumentParser
 from sklearn import preprocessing
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.neural_network import MLPRegressor
-from sklearn.model_selection import KFold
-from sklearn.metrics import mean_squared_error
-from scipy import stats
-import seaborn as sns
 import pandas as pd
 
 
@@ -21,6 +15,23 @@ class Model():
         self.data = pd.read_csv(self.data)
         self.predictors = None
         self.features = None
+        self.prepro_cols = ["MNase_TSSm150", "H3K27me3_TSSm150", 
+                            "H3K4me3_TSSm150", "H3K9ac_TSSm150", 
+                            "Pol2_TSSm150", "MNase_TSSp300", 
+                            "H3K27me3_TSSp300", "H3K4me3_TSSp300", 
+                            "H3K9ac_TSSp300", "Pol2_TSSp300", 
+                            "MNase_TTSm200", "H3K27me3_TTSm200", 
+                            "H3K4me3_TTSm200", "H3K9ac_TTSm200", 
+                            "Pol2_TTSm200", "MNase_GB", 
+                            "H3K27me3_GB", "H3K4me3_GB", 
+                            "H3K9ac_GB", "Pol2_GB"]
+        self.response = ["mRNA"]
+
+
+    def get_model(self):
+        return MLPRegressor(verbose=True, hidden_layer_sizes=(128,100,64,48), 
+                            learning_rate='invscaling', activation='relu', 
+                            early_stopping=True)
 
     def preprocess_data(self, data, columns):
         data_transformed = self.log_transform(data, columns)
@@ -51,9 +62,3 @@ class Model():
 
     def model_train(self, X, y):
         self.model = self.model.fit(X, y)
-
-    def get_model(self):
-        return MLPRegressor(verbose=True, hidden_layer_sizes=(128,100,64,32), 
-                            learning_rate='invscaling', activation='relu', 
-                            early_stopping=True)
-
