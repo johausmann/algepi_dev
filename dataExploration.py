@@ -44,13 +44,14 @@ nv_transformed = transformer.transform(nv)
 
 # scaling of the previously transformed values
 #scaler = preprocessing.RobustScaler().fit(nv_transformed)
-print(data.shape[0])
+#print(data.shape[0])
 nv = data["mRNA"].to_numpy()
-print(nv)
+#print(nv)
 nv = nv.reshape(len(nv), 1)
-print(nv)
+#print(nv)
 nv = nv + 1
-pt = preprocessing.PowerTransformer(method="yeo-johnson")
+print(nv)
+pt = preprocessing.PowerTransformer(method="box-cox")
 pt_transformer = pt.fit(nv)
 nv_preprocessed = pt_transformer.transform(nv)
 #nv_preprocessed = preprocessing.power_transform(nv, method='box-cox')
@@ -63,11 +64,12 @@ scaled_data = pd.DataFrame(nv_preprocessed, columns=["mRNA"])
 
 #plot_distribution(data, numeric_cols)
 #plot_transformed_distribution(trans_data, numeric_cols)
-plot_scaled_distribution(scaled_data, ["mRNA"])
+#plot_scaled_distribution(scaled_data, ["mRNA"])
 
-print(pt.inverse_transform(nv_preprocessed))
+print(pt_transformer.inverse_transform(nv_preprocessed))
 
+print(len(nv), " ", len(nv_preprocessed))
+for i in range(len(nv)):
+    if nv[i] != nv_preprocessed[i]:
+        print(nv[i], " ", nv_preprocessed[i])
 
-for b, a in zip(nv, nv_preprocessed):
-    if b != a:
-        print(b, " ", a)
