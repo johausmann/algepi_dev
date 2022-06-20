@@ -15,28 +15,32 @@ class Model():
         self.data = pd.read_csv(self.data)
         self.predictors = None
         self.features = None
-        self.prepro_cols = ["MNase_TSSm150", "H3K27me3_TSSm150", 
-                            "H3K4me3_TSSm150", "H3K9ac_TSSm150", 
-                            "Pol2_TSSm150", "MNase_TSSp300", 
-                            "H3K27me3_TSSp300", "H3K4me3_TSSp300", 
-                            "H3K9ac_TSSp300", "Pol2_TSSp300", 
-                            "MNase_TTSm200", "H3K27me3_TTSm200", 
-                            "H3K4me3_TTSm200", "H3K9ac_TTSm200", 
-                            "Pol2_TTSm200", "MNase_GB", 
-                            "H3K27me3_GB", "H3K4me3_GB", 
-                            "H3K9ac_GB", "Pol2_GB"]
+        # columns selected by feature selection
+        self.prepro_cols = ['MNase_GB', 'H3K27me3_GB', 'sRNA', 'GC']
         self.response = ["mRNA"]
 
 
     def get_model(self):
-        return MLPRegressor(verbose=True, hidden_layer_sizes=(128,100,64,48), 
-                            learning_rate='invscaling', activation='relu', 
-                            early_stopping=True)
+        return RandomForestRegressor()
+        #return MLPRegressor(verbose=True, hidden_layer_sizes=(128,64,32), 
+        #                    learning_rate='invscaling', activation='relu', 
+        #                    early_stopping=True)
+        #return MLPRegressor(verbose=True, hidden_layer_sizes=(128,100,64,48), 
+        #                    learning_rate='invscaling', activation='relu', 
+        #                    early_stopping=True)
 
     def preprocess_data(self, data, columns):
-        data_transformed = self.log_transform(data, columns)
+        if "GC" in columns:
+            cols_to_transf = [i for i in columns if i != "GC"]
+            #columns.remove("GC")
+            gc = data.GC.to_numpy()/100
+        data_transformed = self.log_transform(data, cols_to_transf)
         scaler = preprocessing.RobustScaler().fit(data_transformed)
-        return scaler.transform(data_transformed), scaler
+        data_preprocessed = scaler.transform(data_transformed)
+        data_preprocessed = pd.DataFrame(data_preprocessed, columns=cols_to_transf)
+        if "GC" in columns:
+            data_preprocessed["GC"] = gc
+        return data_preprocessed.to_numpy(), scaler
 
     def log_transform(self, data, columns):
         log2_transform = lambda x: np.log2(x+1)

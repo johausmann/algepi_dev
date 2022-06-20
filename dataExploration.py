@@ -1,4 +1,5 @@
 from sklearn import preprocessing
+import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import numpy as np
@@ -12,7 +13,17 @@ numeric_cols = ["MNase_TSSm150", "H3K27me3_TSSm150", "H3K4me3_TSSm150",
                 "Pol2_GB", "IntergenicLen", "GeneLen", "sRNA", "GC", 
                 "IntronFreq", "mRNA"]
 
+cols_to_transform = ["MNase_TSSm150", "H3K27me3_TSSm150", "H3K4me3_TSSm150", 
+                "H3K9ac_TSSm150", "Pol2_TSSm150", "MNase_TSSp300", 
+                "H3K27me3_TSSp300", "H3K4me3_TSSp300", "H3K9ac_TSSp300", 
+                "Pol2_TSSp300", "MNase_TTSm200", "H3K27me3_TTSm200", 
+                "H3K4me3_TTSm200", "H3K9ac_TTSm200", "Pol2_TTSm200", 
+                "MNase_GB", "H3K27me3_GB", "H3K4me3_GB", "H3K9ac_GB", 
+                "Pol2_GB", "IntergenicLen", "GeneLen", "sRNA", 
+                "IntronFreq", "mRNA"]
+
 def plot_distribution(data, cols):
+    print(data.columns.values)
     for col in cols:
         plot = sns.displot(data, x=col, kind="kde", fill=True)
         plot.set_titles("{col} distribution")
@@ -30,12 +41,18 @@ def plot_scaled_distribution(data, cols):
         plot.set_titles("{col} scaled distribution")
         plot.savefig(f"dist_scaled/{col}_scaled_distribution.png")
 
-
+def plot_correlation_heatmap(data):
+    cor = data.corr()
+    fig, ax = plt.subplots(figsize=(20,20))  
+    plot = sns.heatmap(cor, annot=True, cmap=plt.cm.Reds, ax=ax)
+    fig = plot.get_figure()
+    fig.savefig(f"plots/correlation_heatmap.png")
 
 data = pd.read_csv("data.csv")
+gc = data.GC.to_numpy()/100
 # get only columns containing numeric values
 print(data.loc[data["mRNA"] > 2000][["mRNA", "GeneLen"]])
-nv = data[numeric_cols].to_numpy()
+nv = data[cols_to_transform].to_numpy()
 
 # log2 transformation on the numeric columns
 log2_transform = lambda x: np.log2(x+1)
@@ -43,33 +60,19 @@ transformer = preprocessing.FunctionTransformer(log2_transform)
 nv_transformed = transformer.transform(nv)
 
 # scaling of the previously transformed values
-#scaler = preprocessing.RobustScaler().fit(nv_transformed)
-#print(data.shape[0])
-nv = data["mRNA"].to_numpy()
-#print(nv)
-nv = nv.reshape(len(nv), 1)
-#print(nv)
-nv = nv + 1
-print(nv)
-pt = preprocessing.PowerTransformer(method="box-cox")
-pt_transformer = pt.fit(nv)
-nv_preprocessed = pt_transformer.transform(nv)
-#nv_preprocessed = preprocessing.power_transform(nv, method='box-cox')
-#nv_preprocessed = boxcox.transform(nv)
-#nv_preprocessed = scaler.transform(nv_transformed)
+scaler = preprocessing.RobustScaler().fit(nv_transformed)
+nv_preprocessed = scaler.transform(nv_transformed)
 
-#trans_data = pd.DataFrame(nv_transformed, columns=numeric_cols)
+trans_data = pd.DataFrame(nv_transformed, columns=cols_to_transform)
+trans_data["GC_scaled"] = gc
 
-scaled_data = pd.DataFrame(nv_preprocessed, columns=["mRNA"])
+scaled_data = pd.DataFrame(nv_preprocessed, columns=cols_to_transform)
+scaled_data["GC_scaled"] = gc
 
-#plot_distribution(data, numeric_cols)
-#plot_transformed_distribution(trans_data, numeric_cols)
-#plot_scaled_distribution(scaled_data, ["mRNA"])
+#plot_distribution(trans_data, trans_data.columns.values)
+#plot_transformed_distribution(trans_data, trans_data.columns.values)
+#plot_scaled_distribution(scaled_data, scaled_data.columns.values)
+plot_correlation_heatmap(trans_data)
 
-print(pt_transformer.inverse_transform(nv_preprocessed))
 
-print(len(nv), " ", len(nv_preprocessed))
-for i in range(len(nv)):
-    if nv[i] != nv_preprocessed[i]:
-        print(nv[i], " ", nv_preprocessed[i])
 
