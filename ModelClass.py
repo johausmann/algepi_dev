@@ -1,6 +1,8 @@
 import os
 import numpy as np
 from sklearn import preprocessing
+from sklearn.linear_model import HuberRegressor
+from sklearn.feature_selection import SequentialFeatureSelector
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.neural_network import MLPRegressor
 from utils import one_hot_dna
@@ -63,6 +65,13 @@ class Model():
         features = self.data.loc[:, header]
         features = features.to_numpy()
         self.predictors = features
+
+    def select_best_predictors(self, X, y, n_features=5, direction="forward", cpu=4):
+        sfs_selector = SequentialFeatureSelector(
+            estimator=self.model, n_features_to_select=n_features, direction=direction, n_jobs=cpu)
+        sfs_selector.fit(X, y)
+        feature_columns = sfs_selector.get_support()
+        return X.columns[feature_columns]
 
     def select_response(self, columns):
         response = self.data.loc[:, columns]
