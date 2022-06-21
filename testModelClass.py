@@ -74,8 +74,16 @@ def main():
     args = parser.parse_args()
 
     test_model = testModel(args.input, args.output, args.p)
+    test_model.prepro_cols = test_model.select_best_predictors(
+           test_model.data[test_model.prepro_cols],
+           test_model.log_transform(test_model.data, test_model.response), 
+           n_features=5,
+           direction="forward")
+    print(test_model.prepro_cols)
     kf_split = test_model.k_split()
     test_model.run_tests(kf_split, test_model.data)
 
 if __name__ == "__main__":
     main()
+
+
