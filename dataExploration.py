@@ -1,4 +1,5 @@
 from sklearn import preprocessing
+from utils import create_dir
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
@@ -26,9 +27,6 @@ cols_to_transform = ["MNase_TSSm150", "H3K27me3_TSSm150", "H3K4me3_TSSm150",
 plot_dirs = ["plots", "plots/dist", "plots/dist_transformed", 
              "plots/dist_scaled"]
 
-def create_dir(directory):
-    if not os.path.exists(directory):
-        os.makedirs(directory)
 
 def plot_distribution(data, cols):
     print(data.columns.values)

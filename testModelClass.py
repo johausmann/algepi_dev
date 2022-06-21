@@ -6,6 +6,7 @@ from scipy import stats
 import seaborn as sns
 import pandas as pd
 from ModelClass import Model
+from utils import create_dir
 
 class testModel(Model):
     def __init__(self, data, outdir, plot):
@@ -22,25 +23,21 @@ class testModel(Model):
         kf_split = kf.split(self.data)
         return kf_split
 
-    
-    def create_dir(self, directory):
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-
 
     def run_tests(self, kf_split, data):
 
         for i, (train_index, test_index) in enumerate(kf_split):
-            data_train = data.iloc[train_index]
-            data_test = data.iloc[test_index]
+            data_train = self.data.iloc[train_index]
+            data_test = self.data.iloc[test_index]
             
-            X_train, _ = self.preprocess_data(data_train, self.prepro_cols)
+            X_train = self.preprocess_data(data_train, self.predictors)
             y_train = self.log_transform(data_train, self.response)
 
-            X_test, _ = self.preprocess_data(data_test, self.prepro_cols)
+            X_test = self.preprocess_data(data_test, self.predictors)
             y_test = data_test.mRNA.to_numpy()
 
-            self.model.fit(X_train, y_train)
+            print(X_train)
+            self.model.fit(X_train, y_train.values.ravel())
 
             y_pred = self.model.predict(X_test)
             
@@ -54,7 +51,7 @@ class testModel(Model):
 
             if self.plot:
                 print("Started ploting...")
-                self.create_dir(self.outdir)
+                create_dir(self.outdir)
                 df = pd.DataFrame()
                 df["y"] = y_test
                 df["y_pred"] = y_pred_re
@@ -71,16 +68,15 @@ def main():
     parser.add_argument('-o', dest='output', help='Directory name where plots should be stored.')
     #parser.add_argument('-v', dest='verbose', default=True, help='Wether training information should be printed.')
     args = parser.parse_args()
-
     test_model = testModel(args.input, args.output, args.p)
-    test_model.prepro_cols = test_model.select_best_predictors(
-           test_model.data[test_model.prepro_cols],
-           test_model.log_transform(test_model.data, test_model.response), 
-           n_features=5,
-           direction="forward")
-    print(test_model.prepro_cols)
-    kf_split = test_model.k_split()
-    test_model.run_tests(kf_split, test_model.data)
+    #bla = test_model.preprocess_data(test_model.data, test_model.data.columns)
+    #test_model.prepro_cols = test_model.select_best_predictors(
+    #       bla,
+    #       test_model.log_transform(test_model.data, test_model.response), 
+    #       n_features=5,
+    #       direction="forward")
+    kf_split = test_model.k_split(number_of_splits=10)
+    test_model.run_tests(kf_split, test_model.predictors)
 
 if __name__ == "__main__":
     main()
