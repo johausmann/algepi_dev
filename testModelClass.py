@@ -31,15 +31,15 @@ class testModel(Model):
     def run_tests(self, kf_split, data):
 
         for i, (train_index, test_index) in enumerate(kf_split):
-            data_train = data.iloc[train_index]
-            data_test = data.iloc[test_index]
+            data_train = self.data.iloc[train_index]
+            data_test = self.data.iloc[test_index]
             
-            X_train, _ = self.preprocess_data(data_train, self.prepro_cols)
+            X_train = self.preprocess_data(data_train, self.predictors)
             y_train = self.log_transform(data_train, self.response)
 
-            X_test, _ = self.preprocess_data(data_test, self.prepro_cols)
+            X_test = self.preprocess_data(data_test, self.predictors)
             y_test = data_test.mRNA.to_numpy()
-
+            print(X_train)
             self.model.fit(X_train, y_train)
 
             y_pred = self.model.predict(X_test)
@@ -50,7 +50,7 @@ class testModel(Model):
             print("Calculating quality of model...")
             score = mean_squared_error(y_test, y_pred_re, squared=False)
             corr = stats.pearsonr(y_test, y_pred_re)
-            print(f"Fold {i} \n RSME: {score}, correlation: {corr[0]}")
+            print(f"Fold {i}:\nRSME: {score}, correlation: {corr}")
 
             if self.plot:
                 print("Started ploting...")
@@ -62,7 +62,6 @@ class testModel(Model):
                 plot = sns.jointplot(data=df, x="y", y="y_pred", kind="reg")
                 plot.fig.suptitle(f"Fold {i}. RMSE={score}, corr={corr}")
                 plot.savefig(f"{self.outdir}/fold_{i}.png")
-                #i+=1
 
 
 def main():
@@ -73,15 +72,14 @@ def main():
     #parser.add_argument('-v', dest='verbose', default=True, help='Wether training information should be printed.')
     args = parser.parse_args()
     test_model = testModel(args.input, args.output, args.p)
-    bla, _ = test_model.preprocess_data(test_model.data, test_model.prepro_cols)
-    test_model.prepro_cols = test_model.select_best_predictors(
-           bla,
-           test_model.log_transform(test_model.data, test_model.response), 
-           n_features=3,
-           direction="forward")
-    print(test_model.prepro_cols)
+    #bla, _ = test_model.preprocess_data(test_model.data, test_model.data.columns)
+    #test_model.prepro_cols = test_model.select_best_predictors(
+    #       bla,
+    #       test_model.log_transform(test_model.data, test_model.response), 
+    #       n_features=5,
+    #       direction="forward")
     kf_split = test_model.k_split(number_of_splits=10)
-    test_model.run_tests(kf_split, test_model.data)
+    test_model.run_tests(kf_split, test_model.predictors)
 
 if __name__ == "__main__":
     main()
