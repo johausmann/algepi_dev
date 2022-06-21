@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import numpy as np
+import os
 
 numeric_cols = ["MNase_TSSm150", "H3K27me3_TSSm150", "H3K4me3_TSSm150", 
                 "H3K9ac_TSSm150", "Pol2_TSSm150", "MNase_TSSp300", 
@@ -22,24 +23,31 @@ cols_to_transform = ["MNase_TSSm150", "H3K27me3_TSSm150", "H3K4me3_TSSm150",
                 "Pol2_GB", "IntergenicLen", "GeneLen", "sRNA", 
                 "IntronFreq", "mRNA"]
 
+plot_dirs = ["plots", "plots/dist", "plots/dist_transformed", 
+             "plots/dist_scaled"]
+
+def create_dir(directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
 def plot_distribution(data, cols):
     print(data.columns.values)
     for col in cols:
         plot = sns.displot(data, x=col, kind="kde", fill=True)
         plot.set_titles("{col} distribution")
-        plot.savefig(f"dist/{col}_distribution.png")
+        plot.savefig(f"plots/dist/{col}_distribution.png")
 
 def plot_transformed_distribution(data, cols):
     for col in cols:
         plot = sns.displot(data, x=col, kind="kde", fill=True)
         plot.set_titles("{col} transformed distribution")
-        plot.savefig(f"dist_transformed/{col}_transformed_distribution.png")
+        plot.savefig(f"plots/dist_transformed/{col}_transformed_distribution.png")
 
 def plot_scaled_distribution(data, cols):
     for col in cols:
         plot = sns.displot(data, x=col, kind="kde", fill=True)
         plot.set_titles("{col} scaled distribution")
-        plot.savefig(f"dist_scaled/{col}_scaled_distribution.png")
+        plot.savefig(f"plots/dist_scaled/{col}_scaled_distribution.png")
 
 def plot_correlation_heatmap(data):
     cor = data.corr()
@@ -48,10 +56,18 @@ def plot_correlation_heatmap(data):
     fig = plot.get_figure()
     fig.savefig(f"plots/correlation_heatmap.png")
 
+
+
 data = pd.read_csv("data.csv")
+
+for dir in plot_dirs:
+    create_dir(dir)
+
 gc = data.GC.to_numpy()/100
-# get only columns containing numeric values
+# check outliers
 print(data.loc[data["mRNA"] > 2000][["mRNA", "GeneLen"]])
+
+# get only columns containing numeric values
 nv = data[cols_to_transform].to_numpy()
 
 # log2 transformation on the numeric columns
@@ -69,9 +85,9 @@ trans_data["GC_scaled"] = gc
 scaled_data = pd.DataFrame(nv_preprocessed, columns=cols_to_transform)
 scaled_data["GC_scaled"] = gc
 
-#plot_distribution(trans_data, trans_data.columns.values)
-#plot_transformed_distribution(trans_data, trans_data.columns.values)
-#plot_scaled_distribution(scaled_data, scaled_data.columns.values)
+plot_distribution(data[numeric_cols], numeric_cols)
+plot_transformed_distribution(trans_data, trans_data.columns.values)
+plot_scaled_distribution(scaled_data, scaled_data.columns.values)
 plot_correlation_heatmap(trans_data)
 
 

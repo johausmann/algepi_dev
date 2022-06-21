@@ -2,12 +2,12 @@ import numpy as np
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import OneHotEncoder
 
-def one_hot_dna(dna_string):
+def one_hot_dna(dna_string, classes):
     # basic sanit check
     assert type(dna_string) == str
     # Create numpy array from string
     dna_array = np.array(list(dna_string))
-    label_encoder = LabelEncoder()
+    label_encoder = LabelEncoder(classes)
     integer_encoded_seq = label_encoder.fit_transform(dna_array)
     onehot_encoder = OneHotEncoder(sparse=False)
     # Reshape numpy array to be a column vector
