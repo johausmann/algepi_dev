@@ -50,7 +50,7 @@ class testModel(Model):
             print("Calculating quality of model...")
             score = mean_squared_error(y_test, y_pred_re, squared=False)
             corr = stats.pearsonr(y_test, y_pred_re)
-            print(f"RSME: {score}, correlation: {corr}")
+            print(f"Fold {i} \n RSME: {score}, correlation: {corr[0]}")
 
             if self.plot:
                 print("Started ploting...")
@@ -72,15 +72,15 @@ def main():
     parser.add_argument('-o', dest='output', help='Directory name where plots should be stored.')
     #parser.add_argument('-v', dest='verbose', default=True, help='Wether training information should be printed.')
     args = parser.parse_args()
-
     test_model = testModel(args.input, args.output, args.p)
+    bla, _ = test_model.preprocess_data(test_model.data, test_model.prepro_cols)
     test_model.prepro_cols = test_model.select_best_predictors(
-           test_model.data[test_model.prepro_cols],
+           bla,
            test_model.log_transform(test_model.data, test_model.response), 
-           n_features=5,
+           n_features=3,
            direction="forward")
     print(test_model.prepro_cols)
-    kf_split = test_model.k_split()
+    kf_split = test_model.k_split(number_of_splits=10)
     test_model.run_tests(kf_split, test_model.data)
 
 if __name__ == "__main__":

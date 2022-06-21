@@ -18,13 +18,13 @@ class Model():
         self.predictors = None
         self.features = None
         # columns selected by feature selection
-        self.prepro_cols = ['MNase_GB', 'H3K27me3_GB', 'sRNA', 'GC']
+        self.prepro_cols = ['MNase_GB', 'H3K27me3_GB', 'sRNA', 'GC', 'Pol2_GB']
         self.response = ["mRNA"]
 
 
     def get_model(self):
         return RandomForestRegressor()
-        #return MLPRegressor(verbose=True, hidden_layer_sizes=(128,64,32), 
+        #return MLPRegressor(verbose=True, hidden_layer_sizes=(100,64,32), 
         #                    learning_rate='invscaling', activation='relu', 
         #                    early_stopping=True)
         #return MLPRegressor(verbose=True, hidden_layer_sizes=(128,100,64,48), 
@@ -59,11 +59,13 @@ class Model():
         self.predictors = features
 
     def select_best_predictors(self, X, y, n_features=5, direction="forward", cpu=4):
+        X_df = pd.DataFrame(X, columns=self.data.columns)
         sfs_selector = SequentialFeatureSelector(
             estimator=self.model, n_features_to_select=n_features, direction=direction, n_jobs=cpu)
-        sfs_selector.fit(X, y)
+        sfs_selector.fit(X_df, y)
         feature_columns = sfs_selector.get_support()
-        return X.columns[feature_columns]
+        print(X_df.columns[feature_columns])
+        return X_df.columns[feature_columns]
 
     def select_response(self, columns):
         response = self.data.loc[:, columns]
