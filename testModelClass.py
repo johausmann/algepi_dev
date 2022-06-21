@@ -50,7 +50,7 @@ class testModel(Model):
             print("Calculating quality of model...")
             score = mean_squared_error(y_test, y_pred_re, squared=False)
             corr = stats.pearsonr(y_test, y_pred_re)
-            print(f"RSME: {score}, correlation: {corr}")
+            print(f"Fold {i}:\nRSME: {score}, correlation: {corr}")
 
             if self.plot:
                 print("Started ploting...")
@@ -62,7 +62,6 @@ class testModel(Model):
                 plot = sns.jointplot(data=df, x="y", y="y_pred", kind="reg")
                 plot.fig.suptitle(f"Fold {i}. RMSE={score}, corr={corr}")
                 plot.savefig(f"{self.outdir}/fold_{i}.png")
-                #i+=1
 
 
 def main():
