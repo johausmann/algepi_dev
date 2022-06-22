@@ -24,7 +24,7 @@ class testModel(Model):
         return kf_split
 
 
-    def run_tests(self, kf_split, data):
+    def run_tests(self, kf_split):
 
         for i, (train_index, test_index) in enumerate(kf_split):
             data_train = self.data.iloc[train_index]
@@ -69,14 +69,17 @@ def main():
     #parser.add_argument('-v', dest='verbose', default=True, help='Wether training information should be printed.')
     args = parser.parse_args()
     test_model = testModel(args.input, args.output, args.p)
-    #bla = test_model.preprocess_data(test_model.data, test_model.data.columns)
-    #test_model.prepro_cols = test_model.select_best_predictors(
-    #       bla,
-    #       test_model.log_transform(test_model.data, test_model.response), 
-    #       n_features=5,
-    #       direction="forward")
-    kf_split = test_model.k_split(number_of_splits=10)
-    test_model.run_tests(kf_split, test_model.predictors)
+    bla_col = list(test_model.data.columns)
+    bla_col.remove('PromoterSeq')
+    bla = test_model.preprocess_data(test_model.data, bla_col)
+    test_model.prepro_cols = test_model.select_best_predictors(
+           bla,
+           test_model.log_transform(test_model.data, test_model.response), 
+           n_features=5,
+           direction="forward",
+           cpu=1)
+    kf_split = test_model.k_split(number_of_splits=5)
+    test_model.run_tests(kf_split)
 
 if __name__ == "__main__":
     main()

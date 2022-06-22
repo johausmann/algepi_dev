@@ -30,7 +30,7 @@ class Model():
 
     def get_model(self):
         #return ExtraTreesRegressor(n_jobs=10)
-        return AdaBoostRegressor(RandomForestRegressor(n_jobs=10))
+        return AdaBoostRegressor(RandomForestRegressor(n_jobs=1))
         #return RandomForestRegressor(n_jobs=10)
         #return MLPRegressor(verbose=True, hidden_layer_sizes=(100,64,32), 
         #                    learning_rate='invscaling', activation='relu', 
