@@ -1,16 +1,18 @@
-from argparse import ArgumentParser
 import pickle
-
+from argparse import ArgumentParser
 from ModelClass import Model
 
 
 class predictModel(Model):
     def __init__(self, data, modelfile, outfile):
+        """Class initialization"""
         Model.__init__(self, data)
+        self.model = None
         self.outfile = outfile
         self.modelfile = modelfile
         
     def add_prediction(self):
+        """Run prediction and add response as a new column to the dataframe"""
         X, _ = self.preprocess_data(self.data, self.predictors)
         y_pred = self.model_predict(X)
         y_pred_re = self.backtransform_data(y_pred)
@@ -18,10 +20,12 @@ class predictModel(Model):
         self.data.to_csv(self.outfile, index=False)
 
     def load_model(self):
+        """Load serialized model from pickle"""
         self.model = pickle.load(open(self.modelfile, 'rb'))
 
 def main():
-    parser = ArgumentParser(description='Predicts expression scores using a pretrained model '\
+    """Main method for command line interface"""
+    parser = ArgumentParser(description='Predicts expression scores using a pre-trained model '\
                                         'and adds the predictions to the input file.')
     parser.add_argument('-i', dest='input', help='The dataset where the model should predict on.')
     parser.add_argument('-m', dest='modelfile', help='Location of the previously trained model.')
