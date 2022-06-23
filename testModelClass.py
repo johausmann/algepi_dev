@@ -15,7 +15,7 @@ class testModel(Model):
     def __init__(self, data, outdir, plot):
         """Class initialization"""
         Model.__init__(self, data)
-        self.outdir = outdir if os.path.exists(outdir)
+        self.outdir = outdir
         self.plot = plot
         if self.plot and not self.outdir:
             raise FileNotFoundError("If plots should be generated a directory must be specified...")
