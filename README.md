@@ -2,6 +2,16 @@
 
 Our development branch for the Computational Epigenomics assignment 4, where expression should be predicted.
 
+## Dependencies
+
+Python3 and pip should be available in your path.
+To install the required dependencies run:
+
+```
+pip install -r requirements.txt
+```
+
+
 ## Test Class
 
 The testModelClass.py module can be used to test different model settings and their performance using kfold splits.
