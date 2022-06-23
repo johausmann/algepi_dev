@@ -32,8 +32,12 @@ class Model():
 
     def get_model(self):
         #return ExtraTreesRegressor(n_jobs=10)
+<<<<<<< HEAD
         #return linear_model.Lasso(alpha=0.1)
         return AdaBoostRegressor(RandomForestRegressor(n_jobs=5))
+=======
+        return AdaBoostRegressor(RandomForestRegressor(n_jobs=1))
+>>>>>>> 4ac602793ff25f93243607fd8d2bd70fce43d5fc
         #return RandomForestRegressor(n_jobs=10)
         #return MLPRegressor(verbose=True, hidden_layer_sizes=(100,64,32), 
         #                    learning_rate='invscaling', activation='relu', 
