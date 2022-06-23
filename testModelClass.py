@@ -2,6 +2,10 @@ import os
 from argparse import ArgumentParser
 from sklearn.model_selection import KFold
 from sklearn.metrics import mean_squared_error
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import GridSearchCV
+from sklearn.ensemble import AdaBoostRegressor
+from sklearn import linear_model
 from scipy import stats
 import seaborn as sns
 import pandas as pd
@@ -23,9 +27,26 @@ class testModel(Model):
         kf_split = kf.split(self.data)
         return kf_split
 
+    def search_grid(self):  
+        data_train = self.data
+        
+        X_train = self.preprocess_data(data_train, self.predictors)
+        y_train = self.log_transform(data_train, self.response)
+        estimator = RandomForestRegressor()#self.model
+        param_grid = { 
+            "n_estimators"      : [75,80,90,95,100,105,110,115,120,125],
+            #"learning_rate"      : [0.5,1,2],
+            "max_depth"            : [7,10,14,20,25,30,50,75],
+            #"loss" : ['linear', 'square', 'exponential'],
+            "max_features"          : ["sqrt", "log2"],
+            "min_samples_split"     : [2,3,4],
+            "min_samples_leaf"      : [1,2],
+            }
+        grid = GridSearchCV(estimator, param_grid, n_jobs=2, cv=5)
+        grid.fit(X_train, y_train.values.ravel())
+        return grid.best_params_
 
-    def run_tests(self, kf_split, data):
-
+    def run_tests(self, kf_split):
         for i, (train_index, test_index) in enumerate(kf_split):
             data_train = self.data.iloc[train_index]
             data_test = self.data.iloc[test_index]
@@ -75,8 +96,10 @@ def main():
     #       test_model.log_transform(test_model.data, test_model.response), 
     #       n_features=5,
     #       direction="forward")
+    print("Searching best parameters for model...")
+    print(test_model.search_grid())
     kf_split = test_model.k_split(number_of_splits=10)
-    test_model.run_tests(kf_split, test_model.predictors)
+    test_model.run_tests(kf_split)
 
 if __name__ == "__main__":
     main()

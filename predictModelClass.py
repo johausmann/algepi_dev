@@ -11,7 +11,7 @@ class predictModel(Model):
         self.modelfile = modelfile
         
     def add_prediction(self):
-        X, _ = self.preprocess_data(self.data, self.prepro_cols)
+        X, _ = self.preprocess_data(self.data, self.predictors)
         y_pred = self.model_predict(X)
         y_pred_re = self.backtransform_data(y_pred)
         self.data['y_pred'] = y_pred_re

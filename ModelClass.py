@@ -5,6 +5,7 @@ from sklearn.linear_model import HuberRegressor
 from sklearn.feature_selection import SequentialFeatureSelector
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.ensemble import AdaBoostRegressor
+from sklearn import linear_model
 from sklearn.ensemble import ExtraTreesRegressor
 from sklearn.neural_network import MLPRegressor
 from utils import one_hot_dna
@@ -18,19 +19,21 @@ class Model():
             raise FileNotFoundError("File is missing...")
         self.model = self.get_model()
         self.data = pd.read_csv(self.data)
-        #self.predictors = ["PromoterSeq"]
-        self.predictors = ['MNase_GB', 'H3K27me3_GB', 'sRNA', 'GC']#, 'H3K9ac_TSSm150']
+        self.promoter = ["PromoterSeq"]
+        self.predictors = ['MNase_GB', 'H3K27me3_GB', 'sRNA', 'GC', 'H3K9ac_TSSm150']
         self.features = None
         # columns selected by feature selection
         self.prepro_cols = None#['MNase_GB', 'H3K27me3_GB', 'sRNA', 'GC', 'H3K9ac_TSSm150', 'PromoterSeq']
         self.response = ["mRNA"]
         self.alphabet = "ACGTN"
         self.used_columns = []
+        self.seq_model = RandomForestRegressor(n_jobs=10)
 
 
     def get_model(self):
         #return ExtraTreesRegressor(n_jobs=10)
-        return AdaBoostRegressor(RandomForestRegressor(n_jobs=10))
+        #return linear_model.Lasso(alpha=0.1)
+        return AdaBoostRegressor(RandomForestRegressor(n_jobs=5))
         #return RandomForestRegressor(n_jobs=10)
         #return MLPRegressor(verbose=True, hidden_layer_sizes=(100,64,32), 
         #                    learning_rate='invscaling', activation='relu', 
@@ -53,6 +56,7 @@ class Model():
             self.used_columns = data_preprocessed.columns
             data_preprocessed = data_preprocessed.to_numpy()
         if "PromoterSeq" in columns:
+            print("Converting sequence data (promoter) to ")
             data_preprocessed = one_hot_dna(data["PromoterSeq"].values)
             self.used_columns = ["PromoterSeq"]
         return data_preprocessed
@@ -63,7 +67,7 @@ class Model():
         return transformer.transform(data[columns])
 
     def backtransform_data(self, values):
-        return np.power(2, values)
+        return np.power(2, values) - 1
 
     def select_predictors(self, columns):
         header = [x for x in columns if x in self.data.columns]
@@ -87,4 +91,4 @@ class Model():
         return self.model.predict(X)
 
     def model_train(self, X, y):
-        self.model = self.model.fit(X, y)
+        self.model = self.model.fit(X, y.values.ravel())

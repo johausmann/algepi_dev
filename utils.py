@@ -38,6 +38,6 @@ def one_hot_dna(dna_string, alphabet="ACTGN"):
     return np.array(onehot_matrix)#np.array(onehot_matrix)
 
 
-def create_dir(self, directory):
+def create_dir(directory):
         if not os.path.exists(directory):
             os.makedirs(directory)

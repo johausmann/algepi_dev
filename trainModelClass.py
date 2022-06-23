@@ -1,4 +1,5 @@
 from argparse import ArgumentParser
+from sklearn.utils import shuffle
 import pickle
 
 from ModelClass import Model
@@ -10,8 +11,9 @@ class trainModel(Model):
         self.outfile = outfile
         
     def train_model(self):
-        X, _ = self.preprocess_data(self.data, self.prepro_cols)
+        X = self.preprocess_data(self.data, self.predictors)
         y = self.log_transform(self.data, self.response)
+        X, y = shuffle(X, y)
         self.model_train(X, y)
 
     def save_model(self):
