@@ -4,9 +4,7 @@ from sklearn.model_selection import KFold
 from sklearn.metrics import mean_squared_error
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import GridSearchCV
-from sklearn.ensemble import AdaBoostRegressor
 from sklearn.feature_selection import SequentialFeatureSelector
-from sklearn import linear_model
 from scipy import stats
 import seaborn as sns
 import pandas as pd
@@ -15,26 +13,27 @@ from utils import create_dir
 
 class testModel(Model):
     def __init__(self, data, outdir, plot):
+        """Class initialization"""
         Model.__init__(self, data)
-        self.outdir = outdir
+        self.outdir = outdir if os.path.exists(outdir)
         self.plot = plot
         if self.plot and not self.outdir:
             raise FileNotFoundError("If plots should be generated a directory must be specified...")
 
 
     def k_split(self, number_of_splits=5, shuffle=True):
+        """Create KFold instance to perform k split cross validation"""
         assert type(number_of_splits) == int
         kf = KFold(n_splits = number_of_splits, shuffle=shuffle)
         kf_split = kf.split(self.data)
         return kf_split
 
-
-    def search_grid(self):  
+    def search_grid(self):
+        """Method to search for optimal parameters of the selected estimator"""
         data_train = self.data
-        
         X_train = self.preprocess_data(data_train, self.predictors)
         y_train = self.log_transform(data_train, self.response)
-        estimator = RandomForestRegressor()#self.model
+        estimator = RandomForestRegressor()
         param_grid = { 
             "n_estimators"      : [75,80,90,95,100,105,110,115,120,125],
             "max_depth"            : [7,10,14,20,25,30],
@@ -59,24 +58,23 @@ class testModel(Model):
         print(X_df.columns[feature_columns])
         return X_df.columns[feature_columns]
 
-
     def run_tests(self, kf_split):
-
+        """Test model performance/quality with cross validation"""
         for i, (train_index, test_index) in enumerate(kf_split):
             data_train = self.data.iloc[train_index]
             data_test = self.data.iloc[test_index]
-            
+
             X_train = self.preprocess_data(data_train, self.predictors)
             y_train = self.log_transform(data_train, self.response)
 
             X_test = self.preprocess_data(data_test, self.predictors)
             y_test = data_test.mRNA.to_numpy()
 
-            print(X_train)
+            # Fit estimator to split train data
             self.model.fit(X_train, y_train.values.ravel())
 
             y_pred = self.model.predict(X_test)
-            
+
             # back transformation
             y_pred_re = self.backtransform_data(y_pred)
 
@@ -98,30 +96,30 @@ class testModel(Model):
 
 
 def main():
+    """Main method for cmd interface"""
     parser = ArgumentParser(description='Test a specified model.')
     parser.add_argument('-i', dest='input', help='The dataset where the model should be tested on.')
     parser.add_argument('-p', action='store_true', help='If plots should be created.')
     parser.add_argument('-o', dest='output', help='Directory name where plots should be stored.')
-    #parser.add_argument('-v', dest='verbose', default=True, help='Wether training information should be printed.')
+    parser.add_argument('-j', dest='jobs', help='Number of jobs', default=1, required=False)
     args = parser.parse_args()
     test_model = testModel(args.input, args.output, args.p)
 
-
-    bla_col = list(test_model.data.columns)
-    bla_col.remove('PromoterSeq')
-    bla = test_model.preprocess_data(test_model.data, bla_col)
+    select_col = list(test_model.data.columns)
+    select_col.remove('PromoterSeq')
+    # select best columns
+    select_dat = test_model.preprocess_data(test_model.data, select_col)
     best_columns = test_model.select_best_predictors(
-           bla,
-           test_model.log_transform(test_model.data, test_model.response), 
+           select_dat,
+           test_model.log_transform(test_model.data, test_model.response),
            n_features=5,
            direction="forward",
-           cpu=1)
+           cpu=args.jobs)
     print("Best columns after SequentialFeatureSelection: ",best_columns)
     print("Best parameters after grid search:", test_model.search_grid())
-    kf_split = test_model.k_split(number_of_splits=10)
+    # run tests on best predicted columns
+    kf_split = test_model.k_split(number_of_splits=5)
     test_model.run_tests(kf_split)
 
 if __name__ == "__main__":
     main()
-
-
