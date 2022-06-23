@@ -2,6 +2,7 @@
 
 Our development branch for the Computational Epigenomics assignment 4, where expression should be predicted.
 
+
 ## Dependencies
 
 Python3 and pip should be available in your path.
@@ -9,6 +10,14 @@ To install the required dependencies run:
 
 ```
 pip install -r requirements.txt
+```
+
+## Gunzip model
+
+To use the pre-trained model (our submission) gunzip the shipped pickle file
+
+```
+gunzip final_model.pickle.gz
 ```
 
 
