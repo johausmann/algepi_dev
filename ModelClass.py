@@ -1,53 +1,54 @@
 import os
+import pandas as pd
 import numpy as np
+
 from sklearn import preprocessing
-from sklearn.linear_model import HuberRegressor
-from sklearn.feature_selection import SequentialFeatureSelector
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.ensemble import AdaBoostRegressor
-from sklearn import linear_model
-from sklearn.ensemble import ExtraTreesRegressor
-from sklearn.neural_network import MLPRegressor
-from utils import one_hot_dna
-import pandas as pd
 
+from utils import one_hot_dna
 
 class Model():
+    """
+    Base class that provides general functions for model selection
+    training and prediction.
+    """
     def __init__(self, data):
         self.data = os.path.abspath(data)
         if not os.path.exists(self.data):
             raise FileNotFoundError("File is missing...")
         self.model = self.get_model()
         self.data = pd.read_csv(self.data)
+        # the column for promoter sequence if promoter should be used for
+        # prediction only on the promoter sequence prediction will be done.
         self.promoter = ["PromoterSeq"]
-        self.predictors = ['MNase_GB', 'H3K27me3_GB', 'sRNA', 'GC', 'H3K9ac_TSSm150']
-        self.features = None
-        # columns selected by feature selection
-        self.prepro_cols = None#['MNase_GB', 'H3K27me3_GB', 'sRNA', 'GC', 'H3K9ac_TSSm150', 'PromoterSeq']
+        # the columns on which the model should be trained and predict
+        self.predictors = ["MNase_GB", "H3K4me3_GB", "H3K9ac_GB", "GeneLen", 
+                           "sRNA", "IntronFreq", "GC"]
+        # old predictor columns
+        #['MNase_GB', 'H3K27me3_GB', 'sRNA', 'GC', 'H3K9ac_TSSm150']
+        
         self.response = ["mRNA"]
+
+        # the possible characters in promoter seq 
+        # needed for one hot encoding if used
         self.alphabet = "ACGTN"
         self.used_columns = []
-        self.seq_model = RandomForestRegressor(n_jobs=10)
-
 
     def get_model(self):
-        #return ExtraTreesRegressor(n_jobs=10)
-<<<<<<< HEAD
-        #return linear_model.Lasso(alpha=0.1)
-        return AdaBoostRegressor(RandomForestRegressor(n_jobs=5))
-=======
-        return AdaBoostRegressor(RandomForestRegressor(n_jobs=1))
->>>>>>> 4ac602793ff25f93243607fd8d2bd70fce43d5fc
-        #return RandomForestRegressor(n_jobs=10)
-        #return MLPRegressor(verbose=True, hidden_layer_sizes=(100,64,32), 
-        #                    learning_rate='invscaling', activation='relu', 
-        #                    early_stopping=True)
-        #return MLPRegressor(verbose=True, hidden_layer_sizes=(128,100,64,48), 
-        #                    learning_rate='invscaling', activation='relu', 
-        #                    early_stopping=True)
+        return AdaBoostRegressor(RandomForestRegressor(max_depth=10, max_features="sqrt", 
+                                                       min_samples_leaf=2,min_samples_split=3,
+                                                       n_estimators=110,n_jobs=5))
 
     def preprocess_data(self, data, columns):
-        cols_to_transf = [i for i in columns if i not in ["GC", "PromoterSeq", "mRNA", "GeneID"]]
+        """
+        Perform log2(x+1) transformation on features that are not normally
+        distributed. Scaling to get the values in range ~ [-1,1] afterwards.
+        GC and PromoterSeq columns are handled differently because of normal
+        distribution and one hot encoding.
+        """
+        cols_to_transf = [i for i in columns if i not in ["GC", "PromoterSeq", 
+                                                          "mRNA", "GeneID"]]
         data_preprocessed = pd.DataFrame()
         if len(cols_to_transf) != 0:
             data_transformed = self.log_transform(data, cols_to_transf)
@@ -66,33 +67,28 @@ class Model():
         return data_preprocessed
 
     def log_transform(self, data, columns):
+        """
+        Transforms specified columns in dataframe using log2(x+1).
+        """
         log2_transform = lambda x: np.log2(x+1)
         transformer = preprocessing.FunctionTransformer(log2_transform)
         return transformer.transform(data[columns])
 
     def backtransform_data(self, values):
+        """
+        Backtransforms the log2(x+1).
+        Needed for getting back to TPM values.
+        """
         return np.power(2, values) - 1
 
-    def select_predictors(self, columns):
-        header = [x for x in columns if x in self.data.columns]
-        return self.data.loc[:, header]
-
-    def select_best_predictors(self, X, y, n_features=5, direction="forward", cpu=4):
-        X_df = pd.DataFrame(X, columns=self.used_columns)
-        sfs_selector = SequentialFeatureSelector(
-            estimator=self.model, n_features_to_select=n_features, direction=direction, n_jobs=cpu)
-        sfs_selector.fit(X_df, y)
-        feature_columns = sfs_selector.get_support()
-        print(X_df.columns[feature_columns])
-        return X_df.columns[feature_columns]
-
-    def select_response(self, columns):
-        response = self.data.loc[:, columns]
-        response = response.to_numpy()
-        self.response = response
-
     def model_predict(self, X):
+        """
+        Wrapper method to predict using a trained model.
+        """
         return self.model.predict(X)
 
     def model_train(self, X, y):
+        """
+        Wrapper method to train a model.
+        """
         self.model = self.model.fit(X, y.values.ravel())

@@ -5,6 +5,7 @@ from sklearn.metrics import mean_squared_error
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import GridSearchCV
 from sklearn.ensemble import AdaBoostRegressor
+from sklearn.feature_selection import SequentialFeatureSelector
 from sklearn import linear_model
 from scipy import stats
 import seaborn as sns
@@ -36,16 +37,27 @@ class testModel(Model):
         estimator = RandomForestRegressor()#self.model
         param_grid = { 
             "n_estimators"      : [75,80,90,95,100,105,110,115,120,125],
-            #"learning_rate"      : [0.5,1,2],
-            "max_depth"            : [7,10,14,20,25,30,50,75],
-            #"loss" : ['linear', 'square', 'exponential'],
+            "max_depth"            : [7,10,14,20,25,30],
             "max_features"          : ["sqrt", "log2"],
             "min_samples_split"     : [2,3,4],
             "min_samples_leaf"      : [1,2],
             }
         grid = GridSearchCV(estimator, param_grid, n_jobs=2, cv=5)
+        print("Searching best model parameters...")
         grid.fit(X_train, y_train.values.ravel())
         return grid.best_params_
+
+    def select_best_predictors(self, X, y, n_features=5, direction="forward", cpu=4):
+        """
+        Select the best features for a given estimator.
+        """
+        X_df = pd.DataFrame(X, columns=self.used_columns)
+        sfs_selector = SequentialFeatureSelector(
+            estimator=self.model, n_features_to_select=n_features, direction=direction, n_jobs=cpu)
+        sfs_selector.fit(X_df, y)
+        feature_columns = sfs_selector.get_support()
+        print(X_df.columns[feature_columns])
+        return X_df.columns[feature_columns]
 
 
     def run_tests(self, kf_split):
@@ -94,16 +106,19 @@ def main():
     args = parser.parse_args()
     test_model = testModel(args.input, args.output, args.p)
 
+
     bla_col = list(test_model.data.columns)
     bla_col.remove('PromoterSeq')
     bla = test_model.preprocess_data(test_model.data, bla_col)
-    test_model.prepro_cols = test_model.select_best_predictors(
+    best_columns = test_model.select_best_predictors(
            bla,
            test_model.log_transform(test_model.data, test_model.response), 
            n_features=5,
            direction="forward",
            cpu=1)
-    kf_split = test_model.k_split(number_of_splits=5)
+    print("Best columns after SequentialFeatureSelection: ",best_columns)
+    print("Best parameters after grid search:", test_model.search_grid())
+    kf_split = test_model.k_split(number_of_splits=10)
     test_model.run_tests(kf_split)
 
 if __name__ == "__main__":
