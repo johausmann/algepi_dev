@@ -13,7 +13,7 @@ class predictModel(Model):
         
     def add_prediction(self):
         """Run prediction and add response as a new column to the dataframe"""
-        X, _ = self.preprocess_data(self.data, self.predictors)
+        X = self.preprocess_data(self.data, self.predictors)
         y_pred = self.model_predict(X)
         y_pred_re = self.backtransform_data(y_pred)
         self.data['y_pred'] = y_pred_re
